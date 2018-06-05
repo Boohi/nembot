@@ -24,9 +24,12 @@ function saveUsers () {
 
 function registerUser(msg) {
     let userID = msg.chat.id;
-    if(users[userID].first_name === msg.from.first_name) {
+    if(userID in users) {
         return 0;
     }
+/*    if(users[userID].first_name === msg.from.first_name) {
+        return 0;
+    }*/
     let user = msg.from  
     users[userID] = user;
     user.publicKey = "";
