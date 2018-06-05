@@ -28,7 +28,7 @@ dataService.loadUsers();
 
 bot.command('start', ctx => {
     dataService.registerUser(ctx);
-    ctx.reply("My public key is " + config.address);
+    ctx.reply("My address is " + config.address);
 });
 
 bot.command('addPublicKey', ctx => {
