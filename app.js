@@ -1,1 +1,1 @@
-let bot = require('.bot');
+let bot = require('./bot');
