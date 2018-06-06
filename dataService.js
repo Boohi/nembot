@@ -32,13 +32,13 @@ function registerUser(msg) {
     }*/
     let user = msg.from  
     users[userID] = user;
-    user.publicKey = "";
+    user.address = "";
     user.activated = false;
     saveUsers();
 }
 
-function setUserPublicKey(user, pKey) {
-    user.publicKey = pKey;
+function setUserAddress(user, address) {
+    user.address = address;
     saveUsers();
 }
 
@@ -46,9 +46,10 @@ function getUser(userID) {
     return users[userID];
 }
 
-function activateUser(pKey) {
+function activateUser(address) {
     Object.keys(users).forEach( function (x) {
-        if(users[x].publicKey == pKey) {
+        let strippedAddress = users[x].address.replace(/-/g, "");
+        if(strippedAddress == address) {
             users[x].activated = true;
             saveUsers();
             return users[x];
@@ -64,7 +65,7 @@ function getUserList() {
 module.exports = {
     getUserList,
     registerUser,
-    setUserPublicKey,
+    setUserAddress,
     loadUsers,
     getUser,
     activateUser

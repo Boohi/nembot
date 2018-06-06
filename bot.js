@@ -16,6 +16,7 @@ let NEMLibrary = nemLibrary.NEMLibrary,
                 PublicAccount = nemLibrary.PublicAccount,
                 ConfirmedTransactionListener = nemLibrary.ConfirmedTransactionListener,
                 UnconfirmedTransactionListener = nemLibrary.UnconfirmedTransactionListener,
+                AccountHttp = nemLibrary.AccountHttp,
                 Account = nemLibrary.Account;
 NEMLibrary.bootstrap(NetworkTypes.TEST_NET);
 
@@ -29,32 +30,28 @@ dataService.loadUsers();
 
 bot.command('start', ctx => {
     dataService.registerUser(ctx);
-    ctx.reply("Thank you for registering! Continue with /addPublicKey <YOUR_PUBLIC_KEY> to start getting free XEM!");
+    ctx.reply("Thank you for registering! Continue with /addAddress <YOUR_ADDRESS> to start getting free XEM!");
 });
 
-bot.command('addPublicKey', ctx => {
+bot.command('addAddress', ctx => {
     let user = dataService.getUser(ctx.from.id);
-    let pKey = ctx.message.text.split(" ")[1];
+    let address = ctx.message.text.split(" ")[1];
 
-    dataService.setUserPublicKey(user, pKey);
-    ctx.reply("Public key set! Now use /getXEM to get your XEM! Be sure the check the encrypted message which comes with the XEM ;)");
+    dataService.setUserAddress(user, address);
+    ctx.reply("Address set! Now use /getXEM to get your XEM! Be sure the check the encrypted message which comes with the XEM ;)");
 });
 
 bot.command('getXEM', ctx => {
     let user = dataService.getUser(ctx.from.id);
     let XEMamount = 1;
-
     if(user.activated === true) {
         XEMamount = 2;
     }
-    
-    let recipientPublicAccount = PublicAccount.createWithPublicKey(user.publicKey);
-    let encryptedMessage = account.encryptMessage("Send a encrypted message 'secret message' to my address (" + accountAddress + ") to receive even more XEM next time!", recipientPublicAccount)
     let transferTransaction = TransferTransaction.create(
         TimeWindow.createWithDeadline(),
-        recipientPublicAccount.address,
+        new Address(user.address),
         new XEM(XEMamount),
-        encryptedMessage
+        PlainMessage.create("Send a encrypted message 'secret message' to my address (" + accountAddress + ") to receive even more XEM next time!")
     );
     
     let signedTransaction = account.signTransaction(transferTransaction);
@@ -69,7 +66,7 @@ confirmedTransactionListener.subscribe(x => {
     let recipientPublicAccount = PublicAccount.createWithPublicKey(x.signer.publicKey);
     let decryptedMessage = account.decryptMessage(x.message, recipientPublicAccount);
     if(decryptedMessage.payload == "secret message") {
-        dataService.activateUser(x.signer.publicKey);
+        dataService.activateUser(x.signer.address.value);
     }
 }, err => {
     console.log(err);
