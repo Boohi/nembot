@@ -29,36 +29,48 @@ let bot = new Telegraf(config.botToken);
 dataService.loadUsers();
 
 bot.command('start', ctx => {
-    dataService.registerUser(ctx);
-    ctx.reply("Thank you for registering! Continue with /addAddress <YOUR_ADDRESS> to start getting free XEM!");
+    ctx.reply(dataService.registerUser(ctx));
 });
 
 bot.command('addAddress', ctx => {
     let user = dataService.getUser(ctx.from.id);
     let address = ctx.message.text.split(" ")[1];
-
-    dataService.setUserAddress(user, address);
-    ctx.reply("Address set! Now use /getXEM to get your XEM! Be sure the check the encrypted message which comes with the XEM ;)");
+    ctx.reply(dataService.setUserAddress(user, address));
 });
 
 bot.command('getXEM', ctx => {
     let user = dataService.getUser(ctx.from.id);
     let XEMamount = 1;
+    if(user == undefined) {
+        return ctx.reply("Register and set address before using this command.");
+    }
     if(user.activated === true) {
         XEMamount = 2;
     }
-    let transferTransaction = TransferTransaction.create(
-        TimeWindow.createWithDeadline(),
-        new Address(user.address),
-        new XEM(XEMamount),
-        PlainMessage.create("Send a encrypted message 'secret message' to my address (" + accountAddress + ") to receive even more XEM next time!")
-    );
+    if(user.address[0] != 'T' || user.address.length != 40) {
+        return ctx.reply("Make sure you've set correct address before using this command.")
+    }
+    try {
+        let transferTransaction = TransferTransaction.create(
+            TimeWindow.createWithDeadline(),
+            new Address(user.address),
+            new XEM(XEMamount),
+            PlainMessage.create("Send a encrypted message 'secret message' to my address (" + accountAddress + ") to receive even more XEM next time!")
+        );
+        let signedTransaction = account.signTransaction(transferTransaction);
+
+        transactionHttp.announceTransaction(signedTransaction).subscribe( x => {
+            console.log(x);
+            ctx.reply(XEMamount + " XEM sent!");
+        });  
+    } 
+    catch(err) {
+        console.log(err);
+        return ctx.reply("Invalid address!")
+    }
     
-    let signedTransaction = account.signTransaction(transferTransaction);
     
-    transactionHttp.announceTransaction(signedTransaction).subscribe( x => {
-        ctx.reply(XEMamount + " XEM sent!");
-    });
+
 });
 let address = new Address(accountAddress);
 let confirmedTransactionListener = new ConfirmedTransactionListener().given(address);
